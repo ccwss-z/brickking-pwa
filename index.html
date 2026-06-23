@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="砖王">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>砖王 PWA</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/icon-152.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-chrome">
+      <button id="openAtlas" class="top-pill" type="button" aria-label="打开砖块图鉴">
+        <span class="grid-icon">▦</span>
+        <span id="atlasCount">0</span>
+      </button>
+      <div class="brand">
+        <h1>砖王</h1>
+        <p>本地识别 · 步骤引导</p>
+      </div>
+      <span class="version">PWA v2.1</span>
+    </header>
+
+    <section id="homeScreen" class="screen active">
+      <section class="main-canvas">
+        <div id="workCanvas" class="work-canvas">
+          <nav class="canvas-tabs" aria-label="画布切换">
+            <button class="canvas-tab active" type="button" data-canvas="screenshot">截图</button>
+            <button class="canvas-tab" type="button" data-canvas="cut">切割预览</button>
+            <button class="canvas-tab" type="button" data-canvas="correction">校正</button>
+          </nav>
+
+          <section id="canvas-screenshot" class="canvas-pane active">
+            <div class="image-stage">
+              <img id="sourceImage" alt="游戏截图">
+              <div id="emptyPreview" class="empty-state">
+                <div class="empty-mark">▦</div>
+                <strong>上传一张游戏截图</strong>
+                <span>识别前先选择图鉴分类，截图会在这里尽量大地显示。</span>
+              </div>
+            </div>
+          </section>
+
+          <section id="canvas-cut" class="canvas-pane">
+            <div class="image-stage">
+              <canvas id="previewCanvas"></canvas>
+              <div id="emptyCutPreview" class="empty-state">
+                <div class="empty-mark">#</div>
+                <strong>暂无切割预览</strong>
+                <span>上传截图后会自动生成带框线的预览。</span>
+              </div>
+            </div>
+          </section>
+
+          <section id="canvas-correction" class="canvas-pane">
+            <div class="board-card">
+              <div class="board-title-row">
+                <div>
+                  <strong>识别校正</strong>
+                  <p>点错格可改为空格或同类图标组</p>
+                </div>
+                <span id="tileCountBadge" class="pill">0 块</span>
+              </div>
+              <div class="board-wrap" id="correctionBoard" aria-label="识别校正棋盘"></div>
+            </div>
+          </section>
+        </div>
+
+        <div id="resultCanvas" class="result-canvas" hidden>
+          <section class="instruction-card">
+            <div id="instructionIcon" class="instruction-icon">✦</div>
+            <div>
+              <strong id="stepTitle">还没有步骤</strong>
+              <p id="stepDescription">完成识别后点击开始分析。</p>
+            </div>
+          </section>
+
+          <div class="board-card">
+            <div class="board-title-row">
+              <div>
+                <strong id="resultTitle">最多可走步骤</strong>
+                <p id="resultSubtitle">已返回当前最多步骤。</p>
+              </div>
+              <span id="stepCounter" class="pill">0/0</span>
+            </div>
+            <div class="board-wrap step-board" id="stepBoard"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bottom-panel">
+        <p id="warningMessage" class="warning" hidden></p>
+
+        <div id="normalControls" class="control-stack">
+          <div class="control-row">
+            <label class="select-shell">
+              <span>识别图鉴</span>
+              <select id="atlasCategorySelect">
+                <option value="all">全部图鉴</option>
+                <option value="default" selected>默认</option>
+              </select>
+            </label>
+            <button id="savePreviewButton" class="soft-button" type="button" disabled>保存预览</button>
+          </div>
+
+          <div class="control-row">
+            <button id="recognizeButton" class="soft-button" type="button">重新识别</button>
+            <label class="primary-button">
+              <input id="imageInput" type="file" accept="image/*">
+              <span id="uploadButtonText">上传截图</span>
+            </label>
+          </div>
+
+          <button id="solveButton" class="primary-solid" type="button" disabled>开始分析</button>
+          <p id="statusText" class="panel-note">先上传截图，砖王会自动切出 14 x 10 棋盘。</p>
+        </div>
+
+        <div id="stepControls" class="control-stack" hidden>
+          <div class="step-actions">
+            <button id="prevStep" class="soft-button" type="button">上一步</button>
+            <button id="nextStep" class="primary-solid" type="button">下一步</button>
+          </div>
+
+          <div class="auto-next-box">
+            <label class="switch-row">
+              <span>自动下一步</span>
+              <input id="autoNextToggle" type="checkbox">
+            </label>
+            <label class="interval-row">
+              <span>间隔</span>
+              <input id="autoNextSeconds" type="number" min="1" max="20" value="3">
+              <span>秒</span>
+            </label>
+          </div>
+
+          <button id="backToCorrection" class="plain-button" type="button">返回校正/重新分析</button>
+          <p id="resultReason" class="warning"></p>
+        </div>
+      </section>
+    </section>
+
+    <section id="atlasScreen" class="screen">
+      <div class="atlas-page-head">
+        <button id="backHome" class="soft-button" type="button">返回</button>
+        <div>
+          <h2>砖块图鉴</h2>
+          <p>默认内置 60 个砖块，可继续导入补充。</p>
+        </div>
+        <span id="atlasCountInline" class="pill">0 个</span>
+      </div>
+
+      <label class="primary-button full-width">
+        <input id="atlasInput" type="file" accept="image/*" multiple>
+        导入砖块图
+      </label>
+
+      <div class="atlas-grid" id="atlasGrid"></div>
+      <button id="clearData" class="danger-button" type="button">清空本地图鉴与缓存</button>
+    </section>
+  </main>
+
+  <template id="cellTemplate">
+    <button class="cell" type="button"></button>
+  </template>
+
+  <script src="./app.js" type="module"></script>
+</body>
+</html>
